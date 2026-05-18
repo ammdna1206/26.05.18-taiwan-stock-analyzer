@@ -395,7 +395,7 @@
         <div class="search-container">
             <div class="search-box-wrapper">
                 <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="text" id="input-stock" class="search-input" placeholder="請輸入台股代號或名稱 (例: 2301 或 光寶科)" value="6538">
+                <input type="text" id="input-stock" class="search-input" placeholder="請輸入台股代號或名稱 (例: 2395 或 研華)" value="6538">
             </div>
             <button class="btn-search" onclick="executeSearch()">
                 <i class="fa-solid fa-bolt"></i> 執行診斷
@@ -403,6 +403,7 @@
             <div class="hot-keywords">
                 <span>熱門快選：</span>
                 <button class="btn-keyword" onclick="quickSelect('6538')">6538 倉和</button>
+                <button class="btn-keyword" onclick="quickSelect('2395')">2395 研華</button>
                 <button class="btn-keyword" onclick="quickSelect('2301')">2301 光寶科</button>
                 <button class="btn-keyword" onclick="quickSelect('2330')">2330 台積電</button>
                 <button class="btn-keyword" onclick="quickSelect('2317')">2317 鴻海</button>
@@ -549,7 +550,7 @@
 </div>
 
 <script>
-    // 預載之核心資料庫（提供基本資料，在真實連線失敗或需要基本公司概況時做整合呈現）
+    // 預載之核心資料庫
     const STOCK_DATABASE = {
         "6538": {
             code: "6538",
@@ -563,6 +564,19 @@
             basePrice: 210,
             trendDir: 1.1,
             judgement: "受惠 N 型 TOPCon 電池轉換潮，高精度 PI 網版出貨量持續高成長。技術面回測支撐，中長線架構健康，建議守均線分批佈局。"
+        },
+        "2395": {
+            code: "2395",
+            name: "研華",
+            business: "全球工業電腦 (IPC) 龍頭大廠。專注於工業物聯網、嵌入式運算、智慧物聯、邊緣運算及智慧醫療設備，全球市佔率超過 34%。",
+            eps: "12.11 元",
+            yield: "3.20 %",
+            pbr: "5.12 倍",
+            scoreChip: 81,
+            scoreNews: 85,
+            basePrice: 340,
+            trendDir: 0.2,
+            judgement: "受惠於全球智慧製造、綠能基礎建設及 AI 邊緣運算需求回溫。主力籌碼呈現外資穩步吃貨，技術面低檔盤整突破在即，屬穩健資產防禦股。"
         },
         "2301": {
             code: "2301",
@@ -615,19 +629,6 @@
             basePrice: 85,
             trendDir: 0.6,
             judgement: "受惠於台股與全球股市多頭，旗下人壽投資收益與銀行利差表現亮眼。籌碼面外資與內資投信穩步回補，維持穩健上升通道。"
-        },
-        "2303": {
-            code: "2303",
-            name: "聯電",
-            business: "台灣晶圓代工大廠之一，專注於成熟與特殊製程。車用晶片及 OLED 驅動 IC 為其近年關鍵獲利引擎。",
-            eps: "4.93 元",
-            yield: "6.20 %",
-            pbr: "1.15 倍",
-            scoreChip: 68,
-            scoreNews: 70,
-            basePrice: 50,
-            trendDir: -0.1,
-            judgement: "成熟製程競爭壓力稍大，短期毛利率承壓，但配息穩健。股價處於歷史相對低檔，具有極高防禦價值與高股息優勢。"
         }
     };
 
@@ -635,24 +636,20 @@
     function getOrGenerateStockProfile(query) {
         query = query.trim();
         
-        // 1. 先在現有資料庫中尋找精確對應
         for (let key in STOCK_DATABASE) {
             if (key === query || STOCK_DATABASE[key].name === query || (key + " " + STOCK_DATABASE[key].name).includes(query)) {
                 return STOCK_DATABASE[key];
             }
         }
         
-        // 2. 如果沒找到，啟動智慧沙盒生成機制
         let code = isNaN(query) ? Math.floor(1000 + Math.random() * 8000).toString() : query;
         let name = isNaN(query) ? query : "自選股";
         
-        // 使用代碼產生固定的「雜湊種子」
         let seed = 0;
         for (let i = 0; i < code.length; i++) {
             seed += code.charCodeAt(i) * (i + 1);
         }
         
-        // 根據代號前兩位判斷其台股板塊
         let prefix = code.slice(0, 2);
         let industry = "科技電子業";
         let epsBase = 3 + (seed % 7);
@@ -689,7 +686,7 @@
         let generatedProfile = {
             code: code,
             name: name,
-            business: `此標的屬於 [${industry}] 板塊。系統正在呼叫本土大廠數據源，若所有連線通道皆超時，將退回模擬，以確保技術面完美分析不卡頓。`,
+            business: `此標的屬於 [${industry}] 板塊。系統已啟動寬容資料引擎，如外部實時連線超時，會以模擬演算法生成該產業特徵走勢。`,
             eps: epsBase.toFixed(2) + " 元",
             yield: yieldVal + " %",
             pbr: pbrVal + " 倍",
@@ -697,7 +694,7 @@
             scoreNews: scoreNews,
             basePrice: basePrice,
             trendDir: trendDir,
-            judgement: `【智慧沙盒評估】此標的隸屬台灣之 ${industry} 板塊。目前綜合籌碼評分為 ${scoreChip}。短線技術面已啟動動態運算，建議密切注意 20 日關鍵支撐與量能增溫狀況。`
+            judgement: `【智慧評估】此標的隸屬台灣之 ${industry} 板塊。目前綜合籌碼評分為 ${scoreChip}。短線技術面已啟動動態運算，建議密切注意 20 日關鍵支撐與量能增溫狀況。`
         };
 
         STOCK_DATABASE[code] = generatedProfile;
@@ -741,19 +738,17 @@
         loadStock(code);
     }
 
-    // 突破性重構：第一優先使用直連免代理、免 CORS 限制的台灣本土金融開放接口 (FinMind API)！
-    // 如此一來，任何台股代碼均可 100% 穩定秒讀，徹底解決黃色模擬燈號問題！
+    // 寬容型技術資料提取與清洗引擎 (Tolorent Data Parser)
     async function fetchRealStockData(code) {
         const statusBadge = document.getElementById('api-status-badge');
         statusBadge.className = "status-badge status-loading";
         statusBadge.innerHTML = `<i class="fa-solid fa-sync fa-spin"></i> 直連本土金融數據庫...`;
 
-        // 計算 4 個月前的起始日期
         let d = new Date();
         d.setMonth(d.getMonth() - 4);
         let startDate = d.toISOString().slice(0, 10);
 
-        // 優先通道：FinMind API (台股歷史與日K開放數據庫，支持跨網域前端直接連線)
+        // 第一通道：FinMind API 直連 (加入高難度欄位容錯解析)
         if (/^\d+$/.test(code)) {
             try {
                 const finmindUrl = `https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPrice&data_id=${code}&start_date=${startDate}`;
@@ -761,23 +756,39 @@
                 if (response.ok) {
                     const json = await response.json();
                     if (json.status === 200 && json.data && json.data.length > 15) {
-                        let rawData = json.data.map(item => ({
-                            date: item.date,
-                            open: Number(item.open),
-                            high: Number(item.max || item.high),
-                            low: Number(item.min || item.low),
-                            close: Number(item.close),
-                            volume: Number(item.Trading_Volume || item.volume || 0)
-                        }));
-                        return { data: rawData, symbol: `${code}.TW`, source: 'FinMind' };
+                        
+                        // 清洗與容錯解析：部分股票欄位為 max/min，有時為 high/low，且可能含有空行
+                        let rawData = json.data
+                            .filter(item => item.date && item.open !== null && item.close !== null)
+                            .map(item => {
+                                let openVal = Number(item.open);
+                                let closeVal = Number(item.close);
+                                
+                                // 智慧型最高、最低價欄位查找與寬容解析 (解決 2395 研華等股票的欄位命名不一致)
+                                let highVal = Number(item.max !== undefined ? item.max : (item.high !== undefined ? item.high : Math.max(openVal, closeVal)));
+                                let lowVal = Number(item.min !== undefined ? item.min : (item.low !== undefined ? item.low : Math.min(openVal, closeVal)));
+                                
+                                return {
+                                    date: item.date,
+                                    open: openVal,
+                                    high: highVal,
+                                    low: lowVal,
+                                    close: closeVal,
+                                    volume: Number(item.Trading_Volume || item.volume || 0)
+                                };
+                            });
+                        
+                        if (rawData.length > 15) {
+                            return { data: rawData, symbol: `${code}.TW`, source: 'FinMind' };
+                        }
                     }
                 }
             } catch (err) {
-                console.warn("FinMind API 直連故障，切換備用代理方案...", err);
+                console.warn("FinMind API 故障或超時，啟用備用 Yahoo 容錯代理...", err);
             }
         }
 
-        // 第二通道：當代號為非純數字 (如美股) 或 FinMind 通道臨時維護時，啟動 Yahoo CORS 多代理備份
+        // 第二通道：Yahoo Finance + CORS 代理
         statusBadge.innerHTML = `<i class="fa-solid fa-sync fa-spin"></i> 啟用備援通道連線...`;
         let symbolsToTry = [];
         if (/^\d+$/.test(code)) {
@@ -833,7 +844,7 @@
                         }
                     }
                 } catch (err) {
-                    console.warn(`代理方案失敗: `, err);
+                    console.warn(`代理通道 ${i+1} 失敗: `, err);
                 }
             }
         }
@@ -891,6 +902,7 @@
 
     // 核心技術指標動態計算引擎
     function calculateTechnicalIndicators(tempArr) {
+        if (!tempArr || tempArr.length === 0) return [];
         let k = 50, d = 50;
         let ema12 = tempArr[0].close, ema26 = tempArr[0].close, diff = 0, dea = 0;
         
@@ -949,6 +961,7 @@
 
     // 智慧型警示生成演算法
     function runSmartAlerts() {
+        if (activeData.length < 2) return;
         const lastIdx = activeData.length - 1;
         const cur = activeData[lastIdx];
         const prev = activeData[lastIdx - 1];
@@ -1100,6 +1113,7 @@
         const ctx = cMain.getContext('2d');
         ctx.clearRect(0, 0, cMain.width, cMain.height);
         
+        if (activeData.length === 0) return;
         let prices = activeData.map(x => x.high).concat(activeData.map(x => x.low));
         activeData.forEach(x => {
             if (x.ma5) prices.push(x.ma5);
@@ -1159,6 +1173,7 @@
     function drawKD() {
         const ctx = cKd.getContext('2d');
         ctx.clearRect(0, 0, cKd.width, cKd.height);
+        if (activeData.length === 0) return;
         let plotW = cKd.width - padding.left - padding.right;
         let plotH = cKd.height - padding.top - padding.bottom;
         let stepX = plotW / activeData.length;
@@ -1191,6 +1206,7 @@
     function drawMACD() {
         const ctx = cMacd.getContext('2d');
         ctx.clearRect(0, 0, cMacd.width, cMacd.height);
+        if (activeData.length === 0) return;
         let plotW = cMacd.width - padding.left - padding.right;
         let plotH = cMacd.height - padding.top - padding.bottom;
         let stepX = plotW / activeData.length;
@@ -1241,6 +1257,7 @@
 
     // 解決響應式寬度對齊之滑鼠座標縮放計算
     function handleMouseMove(e) {
+        if (activeData.length === 0) return;
         let rect = cMain.getBoundingClientRect();
         let scaleX = cMain.width / rect.width;
         mouseX = (e.clientX - rect.left) * scaleX;
