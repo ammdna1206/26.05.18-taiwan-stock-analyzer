@@ -1,0 +1,1 @@
+# 26.05.18-taiwan-stock-analyzer
